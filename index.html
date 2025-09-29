@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>KML Intersect (Pengelompokan Homepass)</title>
+    <title>KML FTTH</title>
     <style>
       :root {
         font-family: 'Segoe UI', Talisman, -apple-system, BlinkMacSystemFont,
@@ -578,10 +578,11 @@ footer {
     <div class="main-wrapper">
     </div>
     <header>
-      <h1>KML Intersect (Client‑Only)</h1>
+      <h1>KML Intersect (Pengelompokan Rumah)</h1>
       <p class="sub">
-        Masukkan <b>dua</b> file KML: (1) KML berisi <b>titik</b>, (2) KML
-        berisi <b>area/teritori (Polygon)</b>. Hasilnya akan mengelompokkan
+        Masukkan <b>dua</b> file KML: 
+        <br>(1) KML berisi <b>titik rumah</b></br>
+        (2) KML berisi <b>Polygon</b>.<br> Hasilnya akan mengelompokkan
         titik ke <i>Folder</i> sesuai area tempatnya berada, dan bisa diunduh
         sebagai KML baru.
       </p>
@@ -591,13 +592,13 @@ footer {
         <div class="row">
           <div>
             <label for="pointsFile"
-              >KML Rumah (Placemark dengan <code>Point</code>)</label
+              >KML Titik Rumah </label
             >
             <input id="pointsFile" type="file" accept=".kml,.xml" />
           </div>
           <div>
             <label for="areasFile"
-              >KML Boundery (Placemark dengan <code>Polygon</code>)</label
+              >KML Boundery Polygon</label
             >
             <input id="areasFile" type="file" accept=".kml,.xml" />
           </div>
@@ -664,7 +665,7 @@ footer {
     <div id="overlapModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h3 class="modal-title">⚠️ Titik Berada di Multiple Area</h3>
+          <h3 class="modal-title">⚠️ Titik Berada di 2 Area Boundery</h3>
           <button class="modal-close" id="modalCloseBtn">&times;</button>
         </div>
         <div class="modal-body">
