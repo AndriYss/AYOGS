@@ -781,7 +781,7 @@ footer {
       }
 
       function buildDocumentKML(groups) {
-        let doc = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n  <name>Intersect Output</name>\n`;
+        let doc = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n  <name>Hasil Seleksi</name>\n`;
         for (const [groupName, items] of groups) {
           doc += `  <Folder>\n    <name>${(groupName || '').replace(
             /[&<>]/g,
