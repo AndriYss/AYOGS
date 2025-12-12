@@ -6,7 +6,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
     const errorMessage = document.getElementById('error-message');
 
     // Cek username dan password
-    if (username === 'admin' && password === 'ayogs07') {
+    if (username === 'admin' && password === 'kultifasi') {
         // Set session storage untuk menandakan pengguna sudah login
         sessionStorage.setItem('authenticated', 'true');
         // Arahkan ke halaman home
@@ -15,3 +15,4 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         errorMessage.innerText = 'Username atau Password salah';
     }
 });
+
