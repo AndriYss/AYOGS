@@ -8,57 +8,79 @@
       :root {
         font-family: 'Segoe UI', Talisman, -apple-system, BlinkMacSystemFont,
           Roboto, 'Helvetica Neue', Arial, sans-serif;
-        --primary: #3b82f6;
+        --primary: #3c4bd4;
         --primary-hover: #2563eb;
         --success: #10b981;
         --warning: #f59e0b;
         --error: #ef4444;
         --bg-primary: #0f172a;
         --bg-secondary: #1e293b;
-        --bg-tertiary: #334155;
+        --bg-tertiary: #2738d1;
         --text-primary: #f8fafc;
         --text-secondary: #cbd5e1;
         --text-muted: #94a3b8;
-        --border: #475569;
-        --border-light: #64748b;
+        --border: #06c2c2;
+        --border-light: #ff0000;
       }
 
       * {
         box-sizing: border-box;
       }
-
+      .badan{
+        display: grid;
+        width: 100%; 
+        height: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+        /* background-color: #0011ff; */
+        justify-content: center;
+        
+  
+        
+}
       body {
-        margin: 0;
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        color: var(--text-primary);
+        /* margin: 0; */
+        background: linear-gradient(135deg,/* #004cff 0% ,*/ #05083a 100%);
+        color: rgb(255, 255, 255);
         min-height: 100vh;
+        text-align: center;
+        max-width: 100%;
+        /* justify-content: center;*/
+      
+        
       }
 
       header {
-        padding: 32px 24px;
+        padding: 25px 24px;
         border-bottom: 1px solid var(--border);
-        background: rgba(15, 23, 42, 0.8);
-        backdrop-filter: blur(10px);
-        text-align: center;
+        border-color: #ffffff;
+        background: #050942;
+        width: 100%;
+        height: 100%
+        
+        /* backdrop-filter: blur(10px); */
+        /* text-align: center; */
       }
 
       h1 {
         margin: 0 0 12px;
         font-size: 28px;
         font-weight: 700;
-        background: linear-gradient(135deg, var(--primary) 0%, #06b6d4 100%);
+        background: linear-gradient(135deg, /*var(--primary) 0%,*/ #00d9ff 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
+        margin-top: 10px;
+         font-weight: bold;
       }
 
       p.sub {
         margin: 0;
-        color: var(--text-secondary);
+        color: rgb(255, 255, 255);
         font-size: 16px;
         max-width: 600px;
         margin: 0 auto;
-        line-height: 1.5;
+        line-height: 1.3;
       }
 
       main {
@@ -68,19 +90,23 @@
       }
 
       .card {
-        background: rgba(30, 41, 59, 0.6);
-        border: 1px solid var(--border);
+        background: rgba(9, 50, 117, 0.6);
+        border: 3px solid var(--border) ;
+        border-color: #00d9ff;
         border-radius: 20px;
+        border-radius: 15px;
+        border-style: groove;
         padding: 24px;
-        margin-bottom: 24px;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        transition: all 0.3s ease;
+        margin-bottom: 20px;
+        /* backdrop-filter: blur(10px); */
+        box-shadow: 0 8px 15px rgb(2, 28, 255);
+        transition: all 0.5s ease;
+      
       }
 
       .card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 12px 40px rgb(0, 255, 242);
       }
 
       .row {
@@ -302,7 +328,7 @@
       .mono {
         font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas,
           'Courier New', monospace;
-        background: var(--bg-secondary);
+        background: rgb(12, 5, 77);
         padding: 2px 6px;
         border-radius: 4px;
         font-size: 13px;
@@ -316,23 +342,24 @@
       }
 
       .stat-card {
-        background: rgba(59, 130, 246, 0.1);
-        border: 1px solid rgba(59, 130, 246, 0.2);
+        background: rgb(9, 83, 202);
+        border: 2px solid rgba(59, 130, 246, 0.2);
         border-radius: 12px;
         padding: 16px;
         text-align: center;
+      
       }
 
       .stat-value {
         font-size: 24px;
         font-weight: 700;
-        color: var(--primary);
+        color: white;
         margin-bottom: 4px;
       }
 
       .stat-label {
         font-size: 13px;
-        color: var(--text-muted);
+        color: white;
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
@@ -354,7 +381,7 @@
 
       .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, var(--primary) 0%, #06b6d4 100%);
+        background: linear-gradient(90deg, var(--primary) 0%, #00d9ff 100%);
         border-radius: 4px;
         width: 0%;
         transition: width 0.3s ease;
@@ -529,6 +556,7 @@
       @media (max-width: 768px) {
         main {
           padding: 20px 16px;
+          margin: center;
         }
         .row {
           gap: 16px;
@@ -553,7 +581,14 @@
     html, body {
   margin: 0;
   padding: 0;
-  height: 100%; /* Penting untuk Flexbox */
+  height: 100%; /*Penting untuk Flexbox */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  
 }
 
 body {
@@ -562,23 +597,80 @@ body {
 }
 
 .main-wrapper {
-  flex-grow: 1;
+   display: grid;
+   width: 100%; 
+    /* background-color: #10b981; */
+
 }
 
-footer {
-  text-align: center;
-  padding: 10px;
-  background-color: #000000;
-  color: white;
-}
+
+        /* Gaya dasar untuk elemen button  */
+        .tombol-js {            /*HPDB*/
+            padding: 10px 10px;
+            background-color: #0d076b; /* Warna hijau */
+            color: white;
+            border: 3px solid #ffffff;
+            border-radius: 20px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 2px;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+        }
+        .btn-pindah-file{       /*KONVERT*/
+            padding: 8px 8px;
+            background-color: #0d076b; /* Warna hijau */
+            color: white;
+            border: 3px solid #ffffff;
+            border-radius: 20px;
+            font-family: Arial, sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+          .tombol-js:hover {
+            background-color: #1e7e34;
+         }
+
+        .footer-tengah {
+            background-color: #000000; /* Warna gelap modern */
+            color: #ffffff;            /* Warna teks putih */
+            height: 70px;              /* Tentukan tinggi footer sesuka Anda */
+            width: 100%;
+            /* Tiga baris kunci untuk membuat teks tepat di tengah */
+            display: flex;
+            justify-content: center;   /* Centering secara Horizontal (Kanan-Kiri) */
+            align-items: center;       /* Centering secara Vertikal (Atas-Bawah) */
+            font-size: 15px;
+            
+        }
+
   </style>
-      <!-- <h1>KML Intersect (Dokumen Pribadi) </h1> -->
-    </style>
   </head>
+  
   <body>
+
+
+    
     <div class="main-wrapper">
-    </div>
     <header>
+          <button class="tombol-js" onclick="arahkanKeWeb()"> HPDB </button>
+    <script>
+      // Fungsi JavaScript yang akan dipanggil saat tombol diklik
+      function arahkanKeWeb() {
+        // Mengarahkan ke URL baru di tab yang sama
+        // window.location.href = "https://hpdb.mai.id";
+        
+        // // ATAU, untuk membuka di tab baru (lebih umum untuk link luar)
+        window.open("https://hpdb.mai.id/", "_blank");
+      }
+      </script>
+
+    <button onclick="window.open('konvert.html', '_blank')" class="btn-pindah-file">KONVERT KML TO EXCEL DAN EXCEL TO KML</button>
+
+
       <h1>KML Intersect (Dokumen Pribadi) </h1>
       <p class="sub">
         Masukkan <b>dua</b> file KML: 
@@ -587,6 +679,7 @@ footer {
         titik ke <i>Folder</i> sesuai area tempatnya berada, dan bisa diunduh
         sebagai KML baru.
       </p>
+    </div>
     </header>
     <script>
         // Cek apakah pengguna sudah login atau belum
@@ -595,7 +688,7 @@ footer {
             window.location.href = 'index.html';
         }
     </script>
-    <main>
+    <main class="badan">
       <section class="card">
         <div class="row">
           <div>
@@ -1089,8 +1182,8 @@ footer {
               if (!groupsMap.has(groupName)) groupsMap.set(groupName, []);
               groupsMap.get(groupName).push(pt);
             } else {
-              if (!groupsMap.has('HP UNCOVER')) groupsMap.set('HP UNCOVER', []);
-              groupsMap.get('HP UNCOVER').push(pt);
+              if (!groupsMap.has('UNCOVER')) groupsMap.set('UNCOVER', []);
+              groupsMap.get('UNCOVER').push(pt);
             }
 
             if (i % Math.max(1, Math.floor(points.length / 25)) === 0) {
@@ -1178,8 +1271,8 @@ footer {
       });
     </script>
 
-  <footer>
-    <p>Since 2025.</p><tr>email:andriyoga89@gmail.com</tr>
+  <footer class="footer-tengah">
+    <p>Since 2025.</p>
   </footer>
   </body>
 </html>
