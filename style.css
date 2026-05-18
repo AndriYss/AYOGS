@@ -1,0 +1,84 @@
+
+.login-container {
+    text-align: center;
+    background: rgb(19, 78, 146);
+    padding: 34px;
+    border-radius: 30px;
+    box-shadow: 0 0 50px rgba(255, 0, 0, 0.1);
+    height: 300px;
+    width: 300px;
+    align-items: center;
+    justify-content: center;
+    border: 50px;
+}
+
+.login-container:hover {
+        background-color: rgb(28, 115, 214);    /* Berubah jadi putih */
+        color: #1e4b8a;               /* Teks jadi biru gelap */
+        border-color: #00fff2;        /* Border berubah jadi biru cyan */
+        box-shadow: 0 0 20px #003cff; /* Memberikan efek cahaya (glow) */
+        transform: translateY(-2px);  /* Efek sedikit terangkat (opsional) */
+    }
+
+input {
+    display: block;
+    margin: 15px auto;
+    padding: 10px;
+    width: 83%;
+    border-radius: 20px;
+    border: 2px solid #106372;
+    box-shadow: 0 0 8px #00d2ff;
+}
+
+button {
+    padding: 10px;
+    width: 90%;
+    background-color: #194e88;
+    color: rgb(255, 255, 255);
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 20px;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 8px #00d0ff;
+    transition: background-color 0.3s;
+}
+
+
+.error {
+    color: red;
+}
+ body {
+        margin: 0;
+        background: linear-gradient(135deg, #031642 0%, #123c7a 100%);
+        color: var(--text-primary);
+        min-height: 100vh;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        margin: 0;
+}
+h2{
+    font-size: 50px;
+    color: aliceblue;
+    justify-content: center;
+    margin-top: 7px;
+   
+}
+
+.login{
+        background-color: #00e1ff;    /* Berubah jadi putih */
+        color: #1e4b8a;               /* Teks jadi biru gelap */
+        border-color: #2a6ba8;        /* Border berubah jadi biru cyan */
+        box-shadow: 0 0 20px #00d2ff; /* Memberikan efek cahaya (glow) */
+        transform: translateY(-2px);  /* Efek sedikit terangkat (opsional)*/ 
+        
+}
+.login:hover {
+        background-color: #1c6cce;    /*Berubah jadi putih */
+        color: #ffffff;               /* Teks jadi biru gelap */
+        border-color: #00d2ff;        /* Border berubah jadi biru cyan */
+        box-shadow: 0 0 20px #00d2ff; /* Memberikan efek cahaya (glow) */
+        transform: translateY(-2px);  /* Efek sedikit terangkat (opsional) */
+    }
