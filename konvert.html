@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoConvert Pro | KML & XLSX</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #10b981;
+            --dark: #0f172a;
+            --bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--dark);
+            padding: 40px 0;
+        }
+
+        .main-card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background: white;
+            overflow: hidden;
+        }
+
+        .header-section {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .converter-section {
+            padding: 30px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #fcfcfd;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .btn-convert {
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .btn-convert:active {
+            transform: scale(0.98);
+        }
+
+        .status-badge {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="main-card">
+                <div class="header-section">
+                    <h1 class="fw-bold mb-2">Geo Convert Pro</h1>
+                    <p class="opacity-75">Konversi data koordinat antara KML dan Excel secara instan</p>
+                </div>
+
+                <div class="col-md-6 converter-section">
+                        <h5 class="fw-bold mb-3 d-flex align-items-center">
+                            <span class="badge bg-success me-2">1.</span> KML ke Excel
+                        </h5>
+                        <p class="text-muted small mb-4">Output: XLSX dengan hasil kolom Nama, Latitude, Longitude.</p>
+                        
+                        <div class="upload-area mb-3" onclick="document.getElementById('inKml').click()">
+                            <input type="file" id="inKml" accept=".kml" hidden>
+                            <div id="textKml">Klik untuk pilih file KML</div>
+                        </div>
+                        
+                        <button id="btnToExcel" class="btn btn-success w-100 btn-convert" disabled>
+                            Unduh File Excel
+                        </button>
+                        <div id="statKml" class="mt-2 text-center small fw-bold"></div>
+                    </div>
+                <div class="row g-0">
+                    <div class="col-md-6 converter-section border-end">
+                        <h5 class="fw-bold mb-3 d-flex align-items-center">
+                            <span class="badge bg-primary me-2">2.</span> Excel ke KML
+                        </h5>
+                        <p class="text-muted small mb-4">Input: XLSX/XLS dengan kolom Nama, Latitude, Longitude.</p>
+                        
+                        <div class="upload-area mb-3" onclick="document.getElementById('inExcel').click()">
+                            <input type="file" id="inExcel" accept=".xlsx, .xls" hidden>
+                            <div id="textExcel">Klik untuk pilih file Excel</div>
+                        </div>
+                        
+                        <button id="btnToKml" class="btn btn-primary w-100 btn-convert" disabled>
+                            Unduh File KML
+                        </button>
+                        <div id="statExcel" class="mt-2 text-center small fw-bold"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <p class="text-center mt-4 text-muted small">
+                <!-- Data diproses langsung di browser Anda. Tidak ada data yang dikirim ke server. -->
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 1. LOGIKA EXCEL KE KML ---
+    let excelRows = null;
+    document.getElementById('inExcel').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        document.getElementById('textExcel').innerText = file.name;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const data = new Uint8Array(evt.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            excelRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+            document.getElementById('btnToKml').disabled = false;
+            document.getElementById('statExcel').innerText = `✓ ${excelRows.length} baris terbaca`;
+            document.getElementById('statExcel').className = "mt-2 text-center small fw-bold text-primary";
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    document.getElementById('btnToKml').addEventListener('click', function() {
+        let kml = `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>\n`;
+        
+        excelRows.forEach(row => {
+            const name = row.Nama || row.nama || row.Name || 'Point';
+            const lat = row.Latitude || row.latitude || row.lat;
+            const lon = row.Longitude || row.longitude || row.long || row.lon;
+            
+            if (lat && lon) {
+                kml += `  <Placemark>\n    <name>${name}</name>\n    <Point><coordinates>${lon},${lat},0</coordinates></Point>\n  </Placemark>\n`;
+            }
+        });
+        
+        kml += `</Document>\n</kml>`;
+        downloadFile(kml, 'HasilKonversi.kml', 'text/xml');
+    });
+
+    // --- 2. LOGIKA KML KE EXCEL ---
+    let kmlContent = null;
+    document.getElementById('inKml').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        document.getElementById('textKml').innerText = file.name;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            kmlContent = evt.target.result;
+            document.getElementById('btnToExcel').disabled = false;
+            document.getElementById('statKml').innerText = `✓ File siap diproses`;
+            document.getElementById('statKml').className = "mt-2 text-center small fw-bold text-success";
+        };
+        reader.readAsText(file);
+    });
+
+    document.getElementById('btnToExcel').addEventListener('click', function() {
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(kmlContent, "text/xml");
+        const placemarks = xml.getElementsByTagName("Placemark");
+        const results = [];
+
+        for (let p of placemarks) {
+            const name = p.getElementsByTagName("name")[0]?.textContent || "Tanpa Nama";
+            const coord = p.getElementsByTagName("coordinates")[0]?.textContent.trim();
+            
+            if (coord) {
+                const parts = coord.split(",");
+                results.push({
+                    "Nama": name,
+                    "Latitude": parseFloat(parts[1]),
+                    "Longitude": parseFloat(parts[0])
+                });
+            }
+        }
+
+        const ws = XLSX.utils.json_to_sheet(results);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Data");
+        XLSX.writeFile(wb, "HasilEkstrakKML.xlsx");
+    });
+
+    // Fungsi Pembantu Download
+    function downloadFile(content, fileName, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+</script>
+
+</body>
+</html>
