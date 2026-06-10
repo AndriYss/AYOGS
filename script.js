@@ -27,7 +27,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
     if(user === "admin" && hashedInput === validHash) {
         // Simpan tanda login berhasil
         sessionStorage.setItem('isLoggedIn', 'true');
-        window.location.href = 'main.html';
+        window.location.href = 'dashboard.html';
     } else {
         document.getElementById('error-message').textContent = "Username atau password salah!";
         console.log("Hash input Anda adalah:", hashedInput); // Hapus baris ini saat sistem sudah live
