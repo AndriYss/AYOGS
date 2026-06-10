@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KONVERT KML TO BOQ</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx-populate/1.21.0/xlsx-populate.min.js"></script>
+    <style>
+      /* Tema Modern Slate yang Adem & Elegan */
+      :root {
+        --bg-utama: #0f172a;
+        --bg-card: #1e293b;
+        --border: rgba(255, 255, 255, 0.08);
+        --primary: #6366f1;
+        --primary-hover: #4f46e5;
+        --text-primary: #f8fafc;
+        --text-secondary: #94a3b8;
+        --success: #10b981;
+        --accent: #38bdf8;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Scrollbar minimalis */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg-utama);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+      }
+
+      body {
+        height: 100vh;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--bg-utama);
+        color: var(--text-primary);
+        display: flex;
+        flex-direction: column;
+        padding: 30px 24px;
+        overflow-y: auto;
+      }
+
+      .badan {
+        width: 100%;
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      .page-header {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+      .page-header h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--accent);
+      }
+
+      .card {
+        background: var(--bg-card);
+        width: 100%;
+        padding: 32px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .step {
+        margin-bottom: 24px;
+      }
+      .step h3 {
+        font-size: 15px;
+        margin-bottom: 12px;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+      }
+
+      input[type="file"] {
+        display: block;
+        width: 100%;
+        background: rgba(15, 23, 42, 0.5);
+        color: var(--text-primary);
+        padding: 16px;
+        border: 2px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: 0.3s;
+        font-size: 14px;
+      }
+      input[type="file"]:hover {
+        border-color: var(--primary);
+        background: rgba(99, 102, 241, 0.05);
+      }
+
+      button {
+        width: 100%;
+        padding: 14px;
+        font-size: 15px;
+        font-weight: 600;
+        background-color: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 10px;
+      }
+      button:hover:not(:disabled) {
+        background-color: var(--primary-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: #334155;
+      }
+
+      #logArea {
+        margin-top: 24px;
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--success);
+        font-family: "SF Mono", monospace;
+        font-size: 13px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        min-height: 100px;
+        max-height: 250px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        display: none;
+      }
+
+      .footer-text {
+        text-align: center;
+        padding: 20px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="badan">
+      <div class="page-header">
+        <h1>Konvert KML to BOQ</h1>
+      </div>
+
+      <div class="card">
+        <div class="step">
+          <h3>1. Unggah File KML (Seluruh Line)</h3>
+          <input type="file" id="fileKML" accept=".kml" />
+        </div>
+        <div class="step">
+          <h3>2. Unggah Template Excel Master</h3>
+          <input type="file" id="fileExcel" accept=".xlsx" />
+        </div>
+        <button id="btnProses">Proses Semua Line & Download</button>
+        <div id="logArea"></div>
+      </div>
+
+      <div class="footer-text">Engineering Data Automation</div>
+    </div>
+
+    <script>
+      let dataKML = {};
+
+      function getTagText(parent, tagName) {
+        const tags = parent.getElementsByTagName(tagName);
+        return tags.length > 0 ? tags[0].textContent : "";
+      }
+
+      async function prosesKML(file) {
+        const reader = new FileReader();
+        return new Promise((resolve) => {
+          reader.onload = (e) => {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+            const placemarks = xmlDoc.getElementsByTagName("Placemark");
+            dataKML = {};
+
+            for (let i = 0; i < placemarks.length; i++) {
+              const pm = placemarks[i];
+              const pmName = getTagText(pm, "name");
+              const pmDesc =
+                getTagText(pm, "description") || getTagText(pm, "Snippet");
+              const textSearch = (pmName + " " + pmDesc).toUpperCase();
+
+              let folders = [];
+              let p = pm.parentNode;
+              while (p && p.nodeName !== "Document") {
+                if (p.nodeName === "Folder")
+                  folders.push(getTagText(p, "name").toUpperCase());
+                p = p.parentNode;
+              }
+              folders.reverse();
+
+              const parentFolder = folders[folders.length - 1] || "";
+              const lineFolder = folders.find((f) => f.startsWith("LINE"));
+
+              if (parentFolder.includes("FDT") || folders.includes("FDT")) {
+                const coreMatch = textSearch.match(/(\d+)\s*(?:C|CORE)/i);
+                if (coreMatch) {
+                  const val = parseInt(coreMatch[1]);
+                  const mount = val >= 144 ? "Ground Mounted" : "Pole Mounted";
+                  const key = `FDT ${mount} ${val} core`;
+                  dataKML[key] = (dataKML[key] || 0) + 1;
+                }
+                continue;
+              }
+
+              if (lineFolder) {
+                const lineName = lineFolder.replace("LINE ", "Line ");
+
+                if (parentFolder === "FAT") {
+                  const key = `${lineName} - FAT`;
+                  dataKML[key] = (dataKML[key] || 0) + 1;
+                } else if (parentFolder.includes("POLE")) {
+                  let exactPoleName = "";
+                  if (
+                    parentFolder.includes("EXISTING") ||
+                    parentFolder.includes("EKS")
+                  ) {
+                    if (parentFolder.includes("LN"))
+                      exactPoleName = "Existing Pole LN";
+                    else if (parentFolder.includes("MTI"))
+                      exactPoleName = "Existing Pole MTI";
+                    else if (parentFolder.includes("MR"))
+                      exactPoleName = "Existing Pole MR";
+                    else exactPoleName = "Existing Pole LN";
+                  } else {
+                    if (parentFolder.includes("7-5"))
+                      exactPoleName =
+                        '7m 5" (for Distribution Pole / FDT Pole)';
+                    else if (parentFolder.includes("7-4"))
+                      exactPoleName = '7m 4" (for Feeder Pole / FDT Pole)';
+                    else if (parentFolder.includes("7-3"))
+                      exactPoleName =
+                        '7m 3" (for Distribution Pole/Home Connect)';
+                    else if (
+                      parentFolder.includes("7-2.5") ||
+                      parentFolder.includes("7-2,5")
+                    )
+                      exactPoleName = '7m 2.5"';
+                    else if (parentFolder.includes("9-5"))
+                      exactPoleName = '9m 5" (for crossing roads)';
+                    else if (parentFolder.includes("9-4"))
+                      exactPoleName = '9m 4" (for crossing roads)';
+                  }
+                  if (exactPoleName !== "") {
+                    dataKML[exactPoleName] = (dataKML[exactPoleName] || 0) + 1;
+                  }
+                } else if (parentFolder === "DISTRIBUTION CABLE") {
+                  const capMatch = textSearch.match(/(\d+C\/\dT)/i);
+                  const routeMatch = textSearch.match(
+                    /TOTAL ROUTE\s*:\s*(\d+)/i,
+                  );
+                  if (capMatch && routeMatch) {
+                    const key = `${lineName} - ${capMatch[1].toUpperCase()}`;
+                    dataKML[key] =
+                      (dataKML[key] || 0) + parseInt(routeMatch[1]);
+                  }
+                } else if (parentFolder === "SLING WIRE") {
+                  const numMatch = pmName.match(/\d+/);
+                  if (numMatch) {
+                    const val = parseInt(numMatch[0]);
+                    dataKML["Rute Strand Wire"] =
+                      (dataKML["Rute Strand Wire"] || 0) + val;
+                  }
+                }
+              }
+            }
+            resolve();
+          };
+          reader.readAsText(file);
+        });
+      }
+
+      async function prosesExcel(fileExcel) {
+        const logArea = document.getElementById("logArea");
+        const workbook = await XlsxPopulate.fromDataAsync(
+          await fileExcel.arrayBuffer(),
+        );
+        const sheet = workbook.sheet("BoM AE");
+
+        let dataInjected = 0;
+        let currentRegion = "";
+        let currentLine = "";
+
+        for (let r = 1; r <= 500; r++) {
+          let cellA = sheet.row(r).cell(1).value();
+          let cellB = sheet.row(r).cell(2).value();
+
+          let textA =
+            cellA && typeof cellA === "string"
+              ? cellA.trim().toUpperCase()
+              : "";
+          let textB =
+            cellB && typeof cellB === "string"
+              ? cellB.trim().toUpperCase()
+              : "";
+
+          if (textA !== "") {
+            currentLine = "";
+            if (textA.includes("SLACK")) currentRegion = "IGNORE";
+            else if (textA.includes("TOTAL FAT")) currentRegion = "FAT";
+            else if (textA.includes("CABLE") || textA.includes("KABEL"))
+              currentRegion = "KABEL";
+            else if (textA.includes("FDT")) currentRegion = "FDT";
+            else if (textA.includes("POLE") || textA.includes("TIANG"))
+              currentRegion = "POLE";
+            else currentRegion = "OTHER";
+          }
+
+          if (textB.includes("STRAND WIRE") || textB.includes("SLING")) {
+            currentRegion = "SLING";
+          }
+
+          if (cellB && typeof cellB === "string") {
+            let namaItem = cellB.trim();
+            const lineMatch = namaItem.match(/^Line\s+([A-Z])$/i);
+
+            if (lineMatch) {
+              currentLine = namaItem;
+              let searchKey = "";
+              if (currentRegion === "FAT") {
+                searchKey = `${namaItem} - FAT`;
+              }
+              if (searchKey !== "" && dataKML[searchKey]) {
+                sheet.row(r).cell(3).value(dataKML[searchKey]);
+                dataInjected++;
+                logArea.innerHTML += `\n[OK] Wilayah ${currentRegion} -> ${namaItem} diisi ${dataKML[searchKey]}`;
+              }
+            } else {
+              if (currentRegion !== "IGNORE") {
+                let directKey = namaItem;
+                if (
+                  currentRegion === "POLE" ||
+                  currentRegion === "FDT" ||
+                  currentRegion === "SLING"
+                ) {
+                  if (dataKML[directKey]) {
+                    sheet.row(r).cell(3).value(dataKML[directKey]);
+                    dataInjected++;
+                    logArea.innerHTML += `\n[OK] Material Global -> ${directKey} diisi ${dataKML[directKey]}`;
+                  }
+                } else {
+                  let lineSpecificKey =
+                    currentLine !== "" ? `${currentLine} - ${namaItem}` : "";
+                  if (lineSpecificKey !== "" && dataKML[lineSpecificKey]) {
+                    sheet.row(r).cell(3).value(dataKML[lineSpecificKey]);
+                    dataInjected++;
+                    logArea.innerHTML += `\n[OK] Material (${currentLine}) -> ${directKey} diisi ${dataKML[lineSpecificKey]}`;
+                  } else if (dataKML[directKey]) {
+                    sheet.row(r).cell(3).value(dataKML[directKey]);
+                    dataInjected++;
+                    logArea.innerHTML += `\n[OK] Material Cadangan -> ${directKey} diisi ${dataKML[directKey]}`;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        logArea.innerHTML += `\n\nSelesai! ${dataInjected} data berhasil disuntikkan dengan aman.`;
+        const blob = await workbook.outputAsync();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `BoQ_Final_PoleSecure_${new Date().getTime()}.xlsx`;
+        link.click();
+      }
+
+      document
+        .getElementById("btnProses")
+        .addEventListener("click", async () => {
+          const fKML = document.getElementById("fileKML").files[0];
+          const fXL = document.getElementById("fileExcel").files[0];
+          const log = document.getElementById("logArea");
+          if (!fKML || !fXL)
+            return alert("Harap unggah file KML dan Excel terlebih dahulu!");
+
+          // =========================================================
+          // DI SINI SINKRONISASI UPDATE COUNTER DIKIRIM KE SERVER PHP
+          // =========================================================
+          fetch("update_counter.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fitur: "counter_boq" }),
+          }).catch((err) =>
+            console.error("Gagal mengirim data counter ke server:", err),
+          );
+          // =========================================================
+
+          log.style.display = "block";
+          log.innerHTML = "Memulai ekstraksi KML (Seluruh Line)...";
+          await prosesKML(fKML);
+          log.innerHTML +=
+            "\nEkstraksi KML selesai. Membaca hirarki template Excel...";
+          await prosesExcel(fXL);
+        });
+    </script>
+    <script>
+      // Cek apakah ada tanda 'isLoggedIn' di sessionStorage
+      if (sessionStorage.getItem("isLoggedIn") !== "true") {
+        // Jika tidak ada, paksa pindah ke halaman login
+        window.location.href = "login.html";
+      }
+    </script>
+  </body>
+</html>

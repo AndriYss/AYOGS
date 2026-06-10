@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Konverter KML ke Excel HPDB</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #0f172a;
+        color: #e2e8f0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .container {
+        background-color: #1e293b;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+      }
+      h2 {
+        margin-top: 0;
+        color: #38bdf8;
+      }
+      p {
+        color: #94a3b8;
+        font-size: 14px;
+        margin-bottom: 25px;
+      }
+      input[type="file"] {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        border: 1.5px dashed #475569;
+        border-radius: 5px;
+        box-sizing: border-box;
+        background-color: #0f172a;
+        color: #e2e8f0;
+      }
+      .btn {
+        background-color: #0284c7;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        width: 100%;
+        font-weight: bold;
+        transition:
+          background-color 0.3s ease,
+          transform 0.1s ease;
+      }
+      .btn:hover {
+        background-color: #0369a1;
+      }
+      .btn:disabled {
+        background-color: #475569;
+        cursor: not-allowed;
+        transform: none;
+      }
+      #statusText {
+        margin-top: 15px;
+        color: #fbbf24;
+        font-weight: bold;
+        font-size: 14px;
+        min-height: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Konverter KML ke Excel (.xlsx)</h2>
+      <p>Otomatisasi Data Wilayah, Cluster, & Fix Format Teks Koordinat.</p>
+
+      <input type="file" id="kmlFileInput" accept=".kml, .xml" />
+      <button class="btn" id="processBtn" onclick="processFile()">
+        Proses & Unduh Excel
+      </button>
+      <div id="statusText"></div>
+    </div>
+
+
+    <script>
+      const API_KEY = "pk.8296a890541c6aecb0cf7e23c6406913";
+      const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
+      async function processFile() {
+        const fileInput = document.getElementById("kmlFileInput");
+        const processBtn = document.getElementById("processBtn");
+        const statusText = document.getElementById("statusText");
+
+        if (fileInput.files.length === 0) {
+          alert("Silakan pilih file KML terlebih dahulu!");
+          return;
+        }
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = async function (event) {
+          processBtn.disabled = true;
+          processBtn.innerText = "Memproses... Mohon Tunggu";
+          statusText.innerText = "Membaca file KML...";
+
+          const kmlText = event.target.result;
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(kmlText, "text/xml");
+
+          const headers = [
+            "FDT Tray",
+            "FDT Port",
+            "Line",
+            "Capacity",
+            "Tube Colour",
+            "Core Number",
+            "FAT ID",
+            "FAT Port",
+            "Pole ID",
+            "Pole Latitude",
+            "Pole Longitude",
+            "FAT Address",
+            "Province",
+            "Regency_city",
+            "District",
+            "Subdistridt",
+            "Postalcode",
+            "Competition",
+            "Area",
+            "Complex_name",
+            "Clustername",
+            "Rw",
+            "Rt",
+            "Street",
+            "Block",
+            "Home Number",
+            "OLT Code",
+            "FDT Code",
+            "FAT Code",
+            "Latitude",
+            "Longitude",
+          ];
+
+          let folders = xmlDoc.getElementsByTagName("Folder");
+          let containers =
+            folders.length > 0
+              ? Array.from(folders)
+              : [xmlDoc.getElementsByTagName("Document")[0]];
+
+          let isError = false;
+          let lineCounts = {};
+
+          containers.forEach((container) => {
+            if (!container) return;
+            let folderNameNode = container.getElementsByTagName("name")[0];
+            let folderName = folderNameNode
+              ? folderNameNode.textContent.trim()
+              : "";
+            if (folderName.toLowerCase().includes(".kml")) return;
+
+            let nameParts = folderName.split(/\s+/);
+            let fatCode = nameParts[1] || "";
+            let lineLetter = fatCode
+              ? fatCode.charAt(0).toUpperCase()
+              : "UNKNOWN";
+
+            let hasHome = false;
+            let childNodes = container.childNodes;
+            for (let i = 0; i < childNodes.length; i++) {
+              if (childNodes[i].nodeName === "Placemark") {
+                let name =
+                  childNodes[i]
+                    .getElementsByTagName("name")[0]
+                    ?.textContent?.trim() || "";
+                let upperName = name.toUpperCase();
+                if (
+                  !upperName.startsWith("MR.") &&
+                  !upperName.startsWith("EXT.") &&
+                  name !== ""
+                ) {
+                  hasHome = true;
+                  break;
+                }
+              }
+            }
+            if (hasHome) {
+              lineCounts[lineLetter] = (lineCounts[lineLetter] || 0) + 1;
+            }
+          });
+
+          const workbook = new ExcelJS.Workbook();
+          const worksheet = workbook.addWorksheet("HPDB_Data");
+          worksheet.addRow(headers);
+
+          let currentLineLetter = "";
+          let currentFolderIndex = 0;
+          let globalFatCounter = 0;
+
+          for (let c = 0; c < containers.length; c++) {
+            let container = containers[c];
+            if (!container) continue;
+
+            let folderNameNode = container.getElementsByTagName("name")[0];
+            let folderName = folderNameNode
+              ? folderNameNode.textContent.trim()
+              : "FAT UNKNOWN";
+
+            if (folderName.toLowerCase().includes(".kml")) continue;
+
+            let nameParts = folderName.split(/\s+/);
+            let fdtCode = nameParts[0] || "FAT";
+            let fatCode = nameParts[1] || "";
+
+            let lineLetter = fatCode
+              ? fatCode.charAt(0).toUpperCase()
+              : "UNKNOWN";
+            let lineText =
+              lineLetter !== "UNKNOWN" ? "Line " + lineLetter : "Line";
+
+            let clusterName = "";
+            let parent = container.parentNode;
+
+            while (parent && parent.nodeType === 1) {
+              if (
+                parent.nodeName === "Folder" ||
+                parent.nodeName === "Document"
+              ) {
+                for (let k = 0; k < parent.childNodes.length; k++) {
+                  if (parent.childNodes[k].nodeName === "name") {
+                    clusterName = parent.childNodes[k].textContent.trim();
+                    break;
+                  }
+                }
+                if (clusterName) break;
+              }
+              parent = parent.parentNode;
+            }
+
+            if (clusterName.toLowerCase().endsWith(".kml")) {
+              clusterName = clusterName.substring(0, clusterName.length - 4);
+            }
+
+            if (lineLetter !== currentLineLetter) {
+              currentLineLetter = lineLetter;
+              currentFolderIndex = 0;
+            }
+
+            let poles = [];
+            let homes = [];
+
+            let childNodes = container.childNodes;
+            for (let i = 0; i < childNodes.length; i++) {
+              if (childNodes[i].nodeName === "Placemark") {
+                let pm = childNodes[i];
+                let name =
+                  pm.getElementsByTagName("name")[0]?.textContent?.trim() || "";
+                let coordText =
+                  pm
+                    .getElementsByTagName("coordinates")[0]
+                    ?.textContent?.trim() || "";
+
+                let lonStr = "",
+                  latStr = "";
+                if (coordText) {
+                  let p = coordText.split(",");
+                  if (p.length >= 2) {
+                    // =========================================================
+                    // FIX KOORDINAT: Ubah menjadi Teks (String) permanen 7 digit
+                    // =========================================================
+                    lonStr = parseFloat(p[0].trim()).toFixed(7);
+                    latStr = parseFloat(p[1].trim()).toFixed(7);
+                  }
+                }
+
+                let upperName = name.toUpperCase();
+                if (
+                  upperName.startsWith("MR.") ||
+                  upperName.startsWith("EXT.")
+                ) {
+                  poles.push({ id: name, lat: latStr, lon: lonStr });
+                } else if (name !== "") {
+                  homes.push({ name: name, lat: latStr, lon: lonStr });
+                }
+              }
+            }
+
+            if (homes.length === 0) continue;
+
+            currentFolderIndex++;
+            globalFatCounter++;
+
+            if (poles.length === 0) {
+              alert(
+                `❌ SALAH NAMA POLE!\nPada area "${folderName}", tidak ditemukan Pole.`,
+              );
+              isError = true;
+              break;
+            }
+
+            let mainPole = poles[0];
+
+            let provinsi = "";
+            let kota = "";
+            let kecamatan = "";
+            let kelurahan = "";
+            let kodepos = "";
+
+            if (mainPole.lat && mainPole.lon) {
+              try {
+                statusText.innerText = `Mencari wilayah untuk ${folderName}...`;
+                let url = `https://us1.locationiq.com/v1/reverse.php?key=${API_KEY}&lat=${mainPole.lat}&lon=${mainPole.lon}&format=json`;
+
+                let response = await fetch(url);
+                let data = await response.json();
+
+                if (data && data.address) {
+                  let addr = data.address;
+                  provinsi = addr.state || addr.province || "";
+                  kota = addr.city || addr.regency || addr.county || "";
+                  kecamatan =
+                    addr.city_district ||
+                    addr.district ||
+                    addr.state_district ||
+                    addr.suburb ||
+                    addr.municipality ||
+                    "";
+                  kelurahan =
+                    addr.village ||
+                    addr.neighbourhood ||
+                    addr.hamlet ||
+                    addr.quarter ||
+                    addr.suburb ||
+                    "";
+                  kodepos = addr.postcode || "";
+                }
+                await delay(600);
+              } catch (error) {
+                console.error("Gagal mengambil data API: ", error);
+              }
+            }
+
+            let lineTotal = lineCounts[lineLetter] || 0;
+            let capacityValue = "";
+            if (lineTotal >= 1 && lineTotal <= 10) {
+              capacityValue = "24C/2T";
+            } else if (lineTotal >= 11 && lineTotal <= 15) {
+              capacityValue = "36C/3T";
+            } else if (lineTotal >= 16) {
+              capacityValue = "48C/4T";
+            }
+
+            let tubeNo = "";
+            let tubeColorArgb = "";
+            if (currentFolderIndex >= 1 && currentFolderIndex <= 5) {
+              tubeNo = "1";
+              tubeColorArgb = "FF00B0F0";
+            } else if (currentFolderIndex >= 6 && currentFolderIndex <= 10) {
+              tubeNo = "2";
+              tubeColorArgb = "FFE26B0A";
+            } else if (currentFolderIndex >= 11 && currentFolderIndex <= 15) {
+              tubeNo = "3";
+              tubeColorArgb = "FF92D050";
+            } else if (currentFolderIndex >= 16 && currentFolderIndex <= 20) {
+              tubeNo = "4";
+              tubeColorArgb = "FF974706";
+            }
+
+            let fatPos = (currentFolderIndex - 1) % 5;
+            let coreNum1 = fatPos * 2 + 1;
+            let coreNum2 = fatPos * 2 + 2;
+
+            for (let j = 0; j < homes.length; j++) {
+              let home = homes[j];
+              let rowData = new Array(headers.length).fill("");
+
+              rowData[2] = lineText;
+              rowData[7] = j + 1;
+              rowData[25] = home.name;
+              rowData[27] = fdtCode;
+              rowData[28] = fatCode;
+
+              // Kolom Home Koordinat
+              rowData[29] = home.lat;
+              rowData[30] = home.lon;
+
+              rowData[12] = provinsi;
+              rowData[13] = kota;
+              rowData[14] = kecamatan;
+              rowData[15] = kelurahan;
+              rowData[16] = kodepos;
+              rowData[17] = "FTTH";
+              rowData[18] = kelurahan;
+              rowData[20] = clusterName;
+
+              if (j === 0 || j === 1) {
+                rowData[3] = capacityValue;
+                rowData[4] = tubeNo;
+                rowData[5] = j === 0 ? coreNum1 : coreNum2;
+              }
+
+              if (j === 0) {
+                rowData[0] = globalFatCounter;
+                rowData[6] = folderName;
+                rowData[8] = mainPole.id;
+
+                // Kolom Pole Koordinat
+                rowData[9] = mainPole.lat;
+                rowData[10] = mainPole.lon;
+              }
+
+              let addedRow = worksheet.addRow(rowData);
+
+              if ((j === 0 || j === 1) && tubeColorArgb !== "") {
+                let cellE = addedRow.getCell(5);
+                cellE.fill = {
+                  type: "pattern",
+                  pattern: "solid",
+                  fgColor: { argb: tubeColorArgb },
+                };
+                cellE.font = { bold: true };
+                cellE.alignment = { horizontal: "center" };
+
+                let cellF = addedRow.getCell(6);
+                cellF.alignment = { horizontal: "center" };
+              }
+
+              // =======================================================
+              // KUNCI FORMAT EXCEL MENJADI TEKS AGAR TITIK TIDAK HILANG SAAT DICOPY
+              // Pole Lat (10), Pole Lon (11), Home Lat (30), Home Lon (31)
+              // =======================================================
+              let cellJ = addedRow.getCell(10);
+              cellJ.alignment = { horizontal: "left" };
+              cellJ.numFmt = "@";
+
+              let cellK = addedRow.getCell(11);
+              cellK.alignment = { horizontal: "left" };
+              cellK.numFmt = "@";
+
+              let cellAD = addedRow.getCell(30);
+              cellAD.alignment = { horizontal: "left" };
+              cellAD.numFmt = "@";
+
+              let cellAE = addedRow.getCell(31);
+              cellAE.alignment = { horizontal: "left" };
+              cellAE.numFmt = "@";
+
+              if (j === 0) {
+                if (homes.length >= 2) {
+                  addedRow.getCell(4).border = {
+                    top: { style: "medium" },
+                    left: { style: "medium" },
+                    right: { style: "thin" },
+                    bottom: { style: "thin" },
+                  };
+                  addedRow.getCell(5).border = {
+                    top: { style: "medium" },
+                    left: { style: "thin" },
+                    right: { style: "thin" },
+                    bottom: { style: "thin" },
+                  };
+                  addedRow.getCell(6).border = {
+                    top: { style: "medium" },
+                    right: { style: "medium" },
+                    left: { style: "thin" },
+                    bottom: { style: "thin" },
+                  };
+                } else {
+                  addedRow.getCell(4).border = {
+                    top: { style: "medium" },
+                    bottom: { style: "medium" },
+                    left: { style: "medium" },
+                    right: { style: "thin" },
+                  };
+                  addedRow.getCell(5).border = {
+                    top: { style: "medium" },
+                    bottom: { style: "medium" },
+                    left: { style: "thin" },
+                    right: { style: "thin" },
+                  };
+                  addedRow.getCell(6).border = {
+                    top: { style: "medium" },
+                    bottom: { style: "medium" },
+                    right: { style: "medium" },
+                    left: { style: "thin" },
+                  };
+                }
+              } else if (j === 1) {
+                addedRow.getCell(4).border = {
+                  bottom: { style: "medium" },
+                  left: { style: "medium" },
+                  right: { style: "thin" },
+                  top: { style: "thin" },
+                };
+                addedRow.getCell(5).border = {
+                  bottom: { style: "medium" },
+                  left: { style: "thin" },
+                  right: { style: "thin" },
+                  top: { style: "thin" },
+                };
+                addedRow.getCell(6).border = {
+                  bottom: { style: "medium" },
+                  right: { style: "medium" },
+                  left: { style: "thin" },
+                  top: { style: "thin" },
+                };
+              }
+            }
+          }
+
+          if (isError) {
+            processBtn.disabled = false;
+            processBtn.innerText = "Proses & Unduh Excel (.xlsx)";
+            statusText.innerText = "";
+            return;
+          }
+
+statusText.innerText = "Menyusun file Excel...";
+          workbook.xlsx.writeBuffer().then(function (buffer) {
+            saveAs(
+              new Blob([buffer], { type: "application/octet-stream" }),
+              "hpdb_output_final.xlsx",
+            );
+
+            // ========================================================
+            // PENAMBAHAN KODE: Kirim sinyal sukses ke server (Dashboard)
+            // ========================================================
+            fetch("update_counter.php", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({ fitur: "counter_hpdb" })
+            })
+            .then(response => response.json())
+            .then(data => console.log("Counter HPDB berhasil ditambah!", data))
+            .catch(error => console.error("Gagal mengirim counter:", error));
+            // ========================================================
+
+            processBtn.disabled = false;
+            processBtn.innerText = "Proses & Unduh Excel (.xlsx)";
+            statusText.innerText = "✅ Selesai!";
+            setTimeout(() => (statusText.innerText = ""), 5000);
+          });
+        }; // Penutup reader.onload
+
+        reader.readAsText(file);
+      } // Penutup fungsi processFile()
+    </script>
+    <script>
+      // Cek apakah ada tanda 'isLoggedIn' di sessionStorage
+      if (sessionStorage.getItem("isLoggedIn") !== "true") {
+        // Jika tidak ada, paksa pindah ke halaman login
+        window.location.href = "login.html";
+      }
+    </script>
+  </body>
+</html>
