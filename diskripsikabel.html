@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator Panjang Kabel (Tema Gelap KML)</title>
+    <style>
+        /* Menggunakan tema gelap yang terinspirasi dari gambar */
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px;
+            background-color: #0d1b2a; /* Warna latar belakang gelap dari gambar */
+            color: #e0e6ed; /* Warna teks terang */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Wadah kartu yang terpusat */
+        .container { 
+            max-width: 600px; 
+            width: 100%;
+            background: #1a2d42; /* Latar belakang kartu sedikit lebih terang */
+            padding: 40px; 
+            border-radius: 12px; /* Tepi membulat */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
+        }
+
+        h2 { 
+            text-align: center; 
+            color: #fff; 
+            margin-bottom: 5px; 
+        }
+
+        /* Deskripsi di bawah judul */
+        .description {
+            text-align: center;
+            color: #a3b1c6;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        .form-group { 
+            margin-bottom: 25px; 
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        label { 
+            font-weight: bold; 
+            color: #fff;
+            margin-bottom: -5px;
+        }
+
+        /* Mengubah input angka menjadi kotak bergaya drop-zone dari gambar */
+        input[type="number"] { 
+            width: 100%; 
+            padding: 20px; /* Padding besar */
+            box-sizing: border-box; 
+            border: 2px dashed #4e6a8e; /* Border putus-putus seperti gambar */
+            border-radius: 8px; 
+            font-size: 16px; 
+            background-color: #112031; /* Latar belakang input lebih gelap */
+            color: #fff;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #3b82f6; /* Warna aksen saat fokus */
+        }
+
+        /* Menghilangkan panah spinner pada input number */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+
+        /* Baris tombol */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        button { 
+            flex: 1;
+            padding: 15px; 
+            border: none; 
+            border-radius: 6px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: background-color 0.3s;
+        }
+
+        /* Tombol tindakan utama (Biru cerah) */
+        button:not(.btn-secondary) {
+            background-color: #3b82f6; 
+            color: white; 
+        }
+
+        button:not(.btn-secondary):hover { 
+            background-color: #2563eb; 
+        }
+
+        /* Tombol tindakan sekunder (abu-abu/biru terang seperti tombol reset/unduh) */
+        .btn-secondary {
+            background-color: transparent;
+            color: #a3b1c6;
+            border: 1px solid #4e6a8e;
+            display: none; /* Disembunyikan awalnya */
+        }
+
+        .btn-secondary:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Kotak hasil teks monospace */
+        .result-box { 
+            margin-top: 30px; 
+            padding: 20px; 
+            background: #112031; /* Latar belakang hasil lebih gelap */
+            border: 2px dashed #4e6a8e; /* Border putus-putus */
+            border-radius: 8px; 
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 15px; 
+            white-space: pre-wrap; 
+            line-height: 1.8; 
+            color: #e0e6ed;
+            display: none; /* Disembunyikan awalnya */
+        }
+
+        /* Meniru bagian yang dapat diringkas di bawah */
+        .collapsible-section {
+            margin-top: 40px;
+            border-top: 1px solid #4e6a8e;
+            padding-top: 20px;
+        }
+
+        .collapsible-section summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #fff;
+            list-style: none; /* Menghilangkan segitiga default */
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .collapsible-section summary::before {
+            content: '▶ ';
+            position: absolute;
+            left: 0;
+            font-size: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .collapsible-section[open] summary::before {
+            content: '▼ ';
+        }
+
+        .collapsible-content {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #a3b1c6;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>KML Intersect (Kalkulator Diskripsi Kabel)</h2>
+    <p class="description">Masukkan Total Route dan Jumlah FAT. Sistem akan menghitung total panjang kabel.</p>
+    
+<div class="form-group">
+        <label for="route">Total Route (m):</label>
+        <input type="number" id="route" placeholder="Contoh: 123">
+    </div>
+    
+    <div class="form-group">
+        <label for="fat">Jumlah FAT (unit):</label>
+        <input type="number" id="fat" placeholder="Contoh: 123">
+    </div>
+    
+    <div class="button-group">
+        <button onclick="hitungKabel()">Hitung</button>
+        <button id="copyBtn" class="btn-secondary" onclick="salinTeks()">Salin Teks Hasil</button>
+    </div>
+    
+    <div id="textOutput" class="result-box"></div>
+
+    <details class="collapsible-section">
+        <summary>Catatan & Batasan</summary>
+        <div class="collapsible-content">
+            <p>1. Perhitungan ini menggunakan konstanta tetap: FDT=1, Slack@20m, Toleransi 5%.</p>
+            <p>2. "Copy Teks Hasil" untuk menyalin format teks yang dihasilkan ke clipboard.</p>
+            <p>3. Pastikan input yang dimasukkan adalah angka yang valid.</p>
+        </div>
+    </details>
+</div>
+
+<script>
+let teksYangDihasilkan = ""; // Variabel penampung teks untuk di-copy
+
+function hitungKabel() {
+    let route = parseFloat(document.getElementById('route').value);
+    let fat = parseInt(document.getElementById('fat').value);
+    
+    if (isNaN(route) || isNaN(fat)) {
+        alert("Mohon masukkan angka dengan benar!");
+        return;
+    }
+    
+    // Logika perhitungan konstantaa
+    let fdt = 1; 
+    let totalUnitSlack = fdt + fat;
+    let panjangSlackMeters = totalUnitSlack * 20; 
+    let subtotal = route + panjangSlackMeters;
+    let totalLengthCable = Math.round(subtotal + (subtotal * 0.05));
+
+    // Format teks persis seperti di gambar (menggunakan spasi teratur)
+    teksYangDihasilkan = 
+`Total Route        : ${route} m
+Total Slack	: ${totalUnitSlack} unit (${fdt} slack FDT & ${fat} slack FAT) @20 m
+Toleransi	: 5%
+
+Total Length Cable  : ${route} + ${panjangSlackMeters} : ${subtotal} m + (${subtotal}m x 5%) = ${totalLengthCable} m`;
+
+    // Tampilkan box teks dan tombol copy
+    document.getElementById('textOutput').innerText = teksYangDihasilkan;
+    document.getElementById('textOutput').style.display = "block";
+    document.getElementById('copyBtn').style.display = "block";
+
+    // KODE UNTUK MENAMBAH COUNTER DI DASHBOARD
+    fetch('update_counter.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        // Pastikan valuenya persis "counter_kabel" agar sesuai dengan pemanggilan di dashboard
+        body: JSON.stringify({ fitur: 'counter_kabel' }) 
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Counter kabel berhasil ditambah!", data);
+    })
+    .catch(error => {
+        console.error("Gagal menambah counter:", error);
+    });
+}
+
+function salinTeks() {
+    // Fungsi otomatis salin ke memori HP / Laptop
+    navigator.clipboard.writeText(teksYangDihasilkan).then(() => {
+        alert("Teks berhasil disalin! Tinggal paste (tempel) ke WA atau Notepad.");
+    }).catch(err => {
+        alert("Gagal menyalin teks: ", err);
+    });
+}
+</script>
+    <script>
+      // Cek apakah ada tanda 'isLoggedIn' di sessionStorage
+      if (sessionStorage.getItem("isLoggedIn") !== "true") {
+        // Jika tidak ada, paksa pindah ke halaman login
+        window.location.href = "index.html";
+      }
+    </script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css?v=17062026">
+    <link rel="icon" type="image/png" href="logo.png" />
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <title>TOOL JARINGAN FTTH</title>
+</head>
+<body>
+    <div class="login-container">
+        <h2 class="text-login">LOGIN</h2>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Username" required> 
+            
+            <div class="password-container">
+                <input type="password" id="password" placeholder="Password" required>
+                <i class="ph ph-eye toggle-password" id="togglePassword"></i>
+            </div>
+
+            <button class="login" type="submit">Login</button>
+            <p id="error-message" class="error"></p>
+            <h5 style="color: white; font-size: 10px; padding-bottom: -100px; padding-top: -10;">
+                DOKUMEN PRIBADI<br>
+                <span style="font-size: 10px;">since 2025</span> 
+            </h5>
+        </form>
+    </div>
+
+    <script src="script.js?v=17062026"></script>
+    
+    <script>
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function () {
+            // Ubah tipe input dari password ke text atau sebaliknya
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Ganti ikon mata terbuka menjadi mata dicoret
+            this.classList.toggle('ph-eye');
+            this.classList.toggle('ph-eye-slash');
+        });
+    </script>
+    <!-- SCRIPT BLOKIR INSPECT ELEMENT & KLIK KANAN (TERMASUK IFRAME) -->
+    <script>
+      // 1. Blokir di halaman utama (main.html)
+      function terapkanBlokir(targetWindow) {
+        targetWindow.document.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+        });
+
+        targetWindow.document.addEventListener('keydown', function(e) {
+          if (e.keyCode === 123 || // F12
+             (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || // Ctrl+Shift+I/J/C
+             (e.ctrlKey && e.keyCode === 85)) { // Ctrl+U
+            e.preventDefault();
+            return false;
+          }
+        });
+      }
+
+      // Terapkan untuk main.html
+      terapkanBlokir(window);
+
+      // 2. Terapkan otomatis ke dalam iframe setiap kali iframe dimuat
+      const iframeLayarUtama = document.getElementById('layarUtama');
+      iframeLayarUtama.onload = function() {
+        try {
+          terapkanBlokir(iframeLayarUtama.contentWindow);
+        } catch (error) {
+          console.log("Tidak bisa menyuntikkan script ke iframe (biasanya karena masalah Cross-Origin)");
+        }
+      };
+    </script>
+</body>
+</html>

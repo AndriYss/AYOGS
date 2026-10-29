@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAGGING HOMEPASS</title>
+    
+    <!-- CSS Leaflet Bawaan -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- CSS Leaflet-Geoman untuk Menggambar Garis/Area -->
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        .control-panel {
+            position: absolute;
+            top: 20px;
+            left: 70px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            width: 320px;
+        }
+        .search-container {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 15px;
+        }
+        .input-coord {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            flex-grow: 1;
+            font-size: 13px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .btn-container {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            flex: 1;
+        }
+        .btn-search {
+            background-color: #28a745;
+            flex: 0 0 auto;
+        }
+        .btn-search:hover {
+            background-color: #218838;
+        }
+        .btn-export {
+            background-color: #007bff;
+        }
+        .btn-export:hover {
+            background-color: #0056b3;
+        }
+        .btn-reset {
+            background-color: #dc3545;
+        }
+        .btn-reset:hover {
+            background-color: #bd2130;
+        }
+        .info {
+            margin-top: 10px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="control-panel">
+        <div class="search-container">
+            <input type="text" id="input-koordinat" class="input-coord" placeholder="Contoh: -6.2088, 106.8456" />
+            <button class="btn btn-search" onclick="cariKoordinat()">🔍 Cari</button>
+        </div>
+
+        <div class="btn-container">
+            <button class="btn btn-export" onclick="exportKeKML()">⬇️ Export KML</button>
+            <button class="btn btn-reset" onclick="resetPeta()">🔄 Reset Peta</button>
+        </div>
+        <div class="info" id="jumlah-rumah">Jumlah rumah ditandai: 0</div>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- JS Leaflet Bawaan -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/tokml@0.4.0/tokml.js"></script>
+    
+    <!-- JS Leaflet-Geoman untuk Menggambar -->
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
+
+    <script>
+        // 1. Inisialisasi Peta
+        const map = L.map('map', {
+            maxZoom: 22
+        }).setView([-6.2088, 106.8456], 20);
+
+        // Menambahkan kontrol Geoman untuk menggambar batas area
+        map.pm.addControls({
+            position: 'topleft', 
+            drawMarker: false,   
+            drawCircleMarker: false,
+            drawPolyline: true,  
+            drawRectangle: true, 
+            drawPolygon: true,   
+            drawCircle: false,
+            editMode: true,      
+            dragMode: true,      
+            cutPolygon: false,
+            removalMode: true    
+        });
+
+        // 2. Menggunakan Layer Google Hybrid
+        L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            attribution: '© Google Maps Satellite & Hybrid',
+            maxNativeZoom: 20,
+            maxZoom: 22
+        }).addTo(map);
+
+        // 3. Layer khusus untuk menampung marker
+        let markerLayer = L.layerGroup().addTo(map);
+
+        // Otomatis melacak GPS lokasi saat pertama dibuka
+        map.locate({
+            setView: true, 
+            maxZoom: 21, 
+            enableHighAccuracy: true
+        });
+
+        // Variabel penampung data
+        let daftarRumah = [];
+        let counter = 1;
+        let jedaMenggambar = false;
+
+        // Meneruskan klik dari dalam area poligon ke peta utama
+        map.on('pm:create', function(e) {
+            e.layer.on('click', function(event) {
+                if (map.pm.globalDrawModeEnabled() || map.pm.globalRemovalModeEnabled() || map.pm.globalEditModeEnabled()) {
+                    return; 
+                }
+                map.fire('click', event);
+            });
+        });
+
+        // Mengatur jeda saat menggambar dimulai dan selesai
+        map.on('pm:drawstart', function() {
+            jedaMenggambar = true;
+        });
+        
+        map.on('pm:drawend', function() {
+            setTimeout(function() {
+                jedaMenggambar = false;
+            }, 500); // Jeda 0.5 detik
+        });
+
+        // 4. Fungsi 1-Klik Langsung Nitik Rumah
+        map.on('click', function(e) {
+            // Cegah titik muncul saat jeda, menggambar, menghapus, atau mengedit
+            if (jedaMenggambar || map.pm.globalDrawModeEnabled() || map.pm.globalRemovalModeEnabled() || map.pm.globalEditModeEnabled()) {
+                return; 
+            }
+
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+            const namaRumah = "NN/" + counter;
+
+            // Menambahkan marker dengan prioritas layer paling atas (zIndexOffset)
+            const marker = L.marker([lat, lng], { 
+                draggable: true,
+                zIndexOffset: 1000 
+            }).addTo(markerLayer);
+
+           // Format data KML awal
+            const feature = {
+                "type": "Feature",
+                "properties": {
+                    "name": namaRumah,
+                    "description": "" // TETAP ADA, TAPI ISINYA KOSONGKAN
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [lng, lat]
+                }
+            };
+
+            daftarRumah.push(feature);
+
+            // Event ketika titik selesai digeser (dragend)
+            marker.on('dragend', function(event) {
+                const posisiBaru = event.target.getLatLng();
+                const newLat = posisiBaru.lat;
+                const newLng = posisiBaru.lng;
+
+                
+               // Cari data rumah di dalam array berdasarkan namaRumah lalu update koordinatnya
+                const rumahTerpilih = daftarRumah.find(f => f.properties.name === namaRumah);
+                if (rumahTerpilih) {
+                    rumahTerpilih.geometry.coordinates = [newLng, newLat];
+                }
+            });
+            
+            document.getElementById('jumlah-rumah').innerText = "Jumlah rumah ditandai: " + daftarRumah.length;
+            counter++;
+        });
+
+      // 5. Fungsi Mengunduh Hasil ke File KML
+        function exportKeKML() {
+            if (daftarRumah.length === 0) {
+                alert("Klik pada peta terlebih dahulu untuk menandai beberapa rumah!");
+                return;
+            }
+
+            fetch('update_counter.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ fitur: 'counter_tagging' })
+            }).catch(error => console.error('Gagal update counter:', error));
+
+            const geoJsonObject = {
+                "type": "FeatureCollection",
+                "features": daftarRumah
+            };
+
+            // Mengambil layer gambar garis/polygon dari geoman
+            map.eachLayer(function(layer){
+                if(layer instanceof L.Polyline || layer instanceof L.Polygon) {
+                    if(!layer.options.attribution) { 
+                        const geojson = layer.toGeoJSON();
+                        geojson.properties.name = "Batas Wilayah";
+                        geoJsonObject.features.push(geojson);
+                    }
+                }
+            });
+
+            // Membuat KML dari GeoJSON menggunakan tokml
+            let kmlString = tokml(geoJsonObject, {
+                name: 'name'
+            });
+
+            // --- JURUS PAMUNGKAS: BERSIHKAN KML SECARA PAKSA ---
+            // 1. Hapus semua <ExtendedData> dan isinya (ini yang bikin tabel/balon putih muncul)
+            kmlString = kmlString.replace(/<ExtendedData>[\s\S]*?<\/ExtendedData>/g, '');
+            
+            // 2. Hapus semua tag <description> (untuk jaga-jaga kalau tokml masih membuatnya)
+            kmlString = kmlString.replace(/<description>[\s\S]*?<\/description>/g, '');
+            // ---------------------------------------------------
+
+            const blob = new Blob([kmlString], { type: 'application/vnd.google-earth.kml+xml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Data Tagging Homepass.kml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+// 6. Fungsi Reset Peta
+        function resetPeta() {
+            const konfirmasi = confirm("Apakah kamu yakin ingin menghapus semua titik dan garis, lalu mengulang dari awal?");
+            
+            if (konfirmasi) {
+                // 1. Hapus semua titik rumah
+                markerLayer.clearLayers();
+                
+                // 2. Hapus semua garis/polygon dengan AMAN (tanpa menghapus folder marker)
+                map.eachLayer(function(layer) {
+                    if (layer instanceof L.Path) { 
+                        map.removeLayer(layer);
+                    }
+                });
+
+                // 3. Kembalikan data hitungan ke 0
+                daftarRumah = [];
+                counter = 1;
+                document.getElementById('jumlah-rumah').innerText = "Jumlah rumah ditandai: 0";
+            }
+        }
+
+        // 7. Fungsi Pencarian Koordinat
+        function cariKoordinat() {
+            const inputVal = document.getElementById('input-koordinat').value.trim();
+            
+            if (!inputVal) {
+                alert("Silakan masukkan koordinat terlebih dahulu!");
+                return;
+            }
+
+            const parts = inputVal.split(/[, ]+/);
+            
+            if (parts.length >= 2) {
+                const lat = parseFloat(parts[0]);
+                const lng = parseFloat(parts[1]);
+
+                if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                    map.flyTo([lat, lng], 20, {
+                        animate: true,
+                        duration: 1.5
+                    });
+                } else {
+                    alert("Koordinat tidak valid! Pastikan formatnya benar (contoh: -6.2088, 106.8456).");
+                }
+            } else {
+                alert("Format salah! Masukkan Latitude dan Longitude dipisah dengan koma atau spasi.");
+            }
+        }
+
+        document.getElementById('input-koordinat').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                cariKoordinat();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Naming Master (Smart Spatial Dropdown)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow-y: auto; }
+        .card { background-color: #1e293b; padding: 35px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); width: 100%; max-width: 500px; border: 1px solid rgba(255, 255, 255, 0.08); box-sizing: border-box; margin: 20px 0; }
+        h2 { margin-top: 0; color: #38bdf8; font-size: 22px; margin-bottom: 8px; }
+        p { color: #94a3b8; font-size: 13px; margin-bottom: 20px; line-height: 1.5; }
+        .warning-box { background-color: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b; padding: 12px; margin-bottom: 20px; border-radius: 4px; font-size: 12px; color: #fbbf24; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 500; color: #cbd5e1; }
+        .input-row { display: flex; gap: 10px; margin-bottom: 15px; }
+        .input-group input, .input-group select { width: 100%; padding: 10px 12px; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f8fafc; font-size: 14px; font-family: 'Poppins', sans-serif; box-sizing: border-box; }
+        .input-group input:focus, .input-group select:focus { outline: none; border-color: #6366f1; }
+        .checkbox-container { background-color: rgba(0,0,0,0.15); padding: 12px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px; }
+        .checkbox-label { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #cbd5e1; cursor: pointer; margin-bottom: 8px; }
+        .checkbox-label:last-child { margin-bottom: 0; }
+        .checkbox-label input { cursor: pointer; width: 16px; height: 16px; }
+        .file-input-wrapper { margin: 20px 0; padding: 20px 15px; border: 2px dashed #475569; border-radius: 10px; background-color: rgba(0,0,0,0.2); }
+        input[type="file"] { width: 100%; color: #94a3b8; font-size: 13px; cursor: pointer; }
+        input[type="file"]::file-selector-button { background-color: #f8fafc; color: #0f172a; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; margin-right: 15px; cursor: pointer; }
+        .btn-process { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; border: none; padding: 14px 24px; font-size: 15px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
+        .btn-process:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4); }
+        #status { margin-top: 20px; font-size: 13px; font-weight: 500; text-align: center; white-space: pre-line; line-height: 1.6; }
+        #download-btn { display: none; margin-top: 15px; background-color: #10b981; text-decoration: none; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; text-align: center; width: 100%; box-sizing: border-box; }
+        #download-btn:hover { background-color: #059669; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Auto Naming Master (ODP & Pole)</h2>
+        <p>Sistem otomatisasi spasial menggunakan deteksi objek cerdas tanpa ketik filter.</p>
+         
+        <div class="warning-box">
+            <b>SOP Urutan Objek di KML:</b><br>
+            1. Semua Kabel Distribusi / Jalur Utama (Line A, B, C, dst)<br>
+            2. Semua Kabel Sling Wire / Cabang<br>
+            3. Titik-titik Tiang & ODP (Boleh Digabung)
+        </div>
+
+        <div class="input-group">
+            <label>Tipe Objek yang Ingin Dinamai</label>
+            <select id="targetType">
+                <option value="tiang">Tiang (Semua titik yang BUKAN ODP)</option>
+                <option value="odp">ODP (Semua titik yang ada kata 'ODP')</option>
+            </select>
+        </div>
+
+        <div class="input-row">
+            <div class="input-group" style="flex: 1.6;">
+                <label>Base Prefix / Kode Cluster</label>
+                <input type="text" id="prefix" value="POLE-">
+            </div>
+            <div class="input-group" style="flex: 1;">
+                <label>Jalur Utama (Line)</label>
+                <input type="number" id="mainLineCount" value="3" min="1">
+            </div>
+        </div>
+
+        <div class="checkbox-container">
+            <label class="checkbox-label">
+                <input type="checkbox" id="insertLineLetter"> Sisipkan Huruf Jalur otomatis (A, B, C)
+            </label>
+            <label class="checkbox-label">
+                <input type="checkbox" id="resetPerLine"> Reset nomor dari 1 tiap ganti Jalur
+            </label>
+        </div>
+
+        <div class="input-row">
+            <div class="input-group" style="flex: 1;">
+                <label>Mulai Angka</label>
+                <input type="number" id="startNumber" value="1" min="1">
+            </div>
+            <div class="input-group" style="flex: 1;">
+                <label>Format Digit</label>
+                <select id="digitFormat">
+                    <option value="1">1 Digit (1, 2, 3)</option>
+                    <option value="2">2 Digit (01, 02, 03)</option>
+                    <option value="3" selected>3 Digit (001, 002, 003)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="file-input-wrapper">
+            <input type="file" id="file-input" accept=".kml, .xml">
+        </div>
+
+        <button class="btn-process" onclick="processNaming()">Proses Penomoran & Download</button>
+
+        <div id="status"></div>
+        <a id="download-btn">⬇️ Unduh KML Hasil</a>
+    </div>
+
+    <script>
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; 
+            const rad = Math.PI / 180;
+            const dLat = (lat2 - lat1) * rad;
+            const dLon = (lon2 - lon1) * rad;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function getDistanceAlongLine(p, lineCoords, cumulativeDistances) {
+            let minDistToSegment = Infinity;
+            let distAlongLine = 0;
+
+            for (let i = 0; i < lineCoords.length - 1; i++) {
+                const A = lineCoords[i];
+                const B = lineCoords[i+1];
+                const dx = B.lon - A.lon;
+                const dy = B.lat - A.lat;
+                let u = 0;
+                
+                if (dx !== 0 || dy !== 0) {
+                    u = ((p.lon - A.lon) * dx + (p.lat - A.lat) * dy) / (dx * dx + dy * dy);
+                    u = Math.max(0, Math.min(1, u));
+                }
+
+                const projLat = A.lat + u * dy;
+                const projLon = A.lon + u * dx;
+                const distToSegment = getDistance(p.lat, p.lon, projLat, projLon);
+
+                if (distToSegment < minDistToSegment) {
+                    minDistToSegment = distToSegment;
+                    distAlongLine = cumulativeDistances[i] + getDistance(A.lat, A.lon, projLat, projLon);
+                }
+            }
+            return { minDist: minDistToSegment, distAlong: distAlongLine };
+        }
+
+        function processNaming() {
+            const fileInput = document.getElementById('file-input');
+            const targetType = document.getElementById('targetType').value;
+            const prefix = document.getElementById('prefix').value;
+            const mainLineCount = parseInt(document.getElementById('mainLineCount').value) || 1;
+            const insertLineLetter = document.getElementById('insertLineLetter').checked;
+            const resetPerLine = document.getElementById('resetPerLine').checked;
+            const startNumber = parseInt(document.getElementById('startNumber').value) || 1;
+            const digitFormat = parseInt(document.getElementById('digitFormat').value) || 1;
+            const status = document.getElementById('status');
+            const downloadBtn = document.getElementById('download-btn');
+
+            if (fileInput.files.length === 0) { alert("Silakan pilih file KML!"); return; }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            status.style.color = "#fbbf24"; 
+            status.innerText = "Memproses topologi kabel otomatis...";
+            downloadBtn.style.display = "none";
+
+            reader.onload = function(event) {
+                try {
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(event.target.result, "text/xml");
+
+                    const lineStrings = xmlDoc.getElementsByTagName("LineString");
+                    if (lineStrings.length === 0) {
+                        status.style.color = "#ef4444"; status.innerText = "Gagal: Tidak ditemukan garis kabel."; return;
+                    }
+
+                    let linesData = [];
+                    for (let j = 0; j < lineStrings.length; j++) {
+                        const coordsText = lineStrings[j].getElementsByTagName("coordinates")[0].textContent.trim();
+                        const coordsArray = coordsText.split(/\s+/);
+                        let lineCoords = [];
+                        let cumulativeDistances = [0];
+                        let totalDistance = 0;
+
+                        for (let i = 0; i < coordsArray.length; i++) {
+                            let parts = coordsArray[i].split(",");
+                            if (parts.length >= 2) {
+                                let lon = parseFloat(parts[0]);
+                                let lat = parseFloat(parts[1]);
+                                lineCoords.push({lat: lat, lon: lon});
+                                if (i > 0) {
+                                    let prev = lineCoords[i-1];
+                                    totalDistance += getDistance(prev.lat, prev.lon, lat, lon);
+                                    cumulativeDistances.push(totalDistance);
+                                }
+                            }
+                        }
+                        linesData.push({ id: j, coords: lineCoords, cumulative: cumulativeDistances });
+                    }
+
+                    linesData.forEach((line, idx) => {
+                        if (idx < mainLineCount) {
+                            line.isMain = true;
+                            line.parentMainLineId = idx;
+                            line.junctionDistance = 0;
+                        } else {
+                            line.isMain = false;
+                            let closestMainId = 0;
+                            let shortestDistToMain = Infinity;
+                            let bestJunctionDist = 0;
+
+                            line.coords.forEach(coord => {
+                                for (let m = 0; m < Math.min(mainLineCount, linesData.length); m++) {
+                                    let mainLine = linesData[m];
+                                    let res = getDistanceAlongLine(coord, mainLine.coords, mainLine.cumulative);
+                                    if (res.minDist < shortestDistToMain) {
+                                        shortestDistToMain = res.minDist;
+                                        closestMainId = m;
+                                        bestJunctionDist = res.distAlong;
+                                    }
+                                }
+                            });
+                            line.parentMainLineId = closestMainId;
+                            line.junctionDistance = bestJunctionDist; 
+                        }
+                    });
+
+                    linesData.forEach((line, idx) => {
+                        if (idx >= mainLineCount && line.coords.length > 0) {
+                            let parentMain = linesData[line.parentMainLineId];
+                            let startRes = getDistanceAlongLine(line.coords[0], parentMain.coords, parentMain.cumulative);
+                            let endRes = getDistanceAlongLine(line.coords[line.coords.length - 1], parentMain.coords, parentMain.cumulative);
+                            
+                            if (endRes.minDist < startRes.minDist) {
+                                line.coords.reverse();
+                                let totalDistance = line.cumulative[line.cumulative.length - 1];
+                                line.cumulative = line.cumulative.map(d => totalDistance - d).reverse();
+                            }
+                        }
+                    });
+
+                    const placemarks = Array.from(xmlDoc.getElementsByTagName("Placemark"));
+                    let pointsData = [];
+
+                    placemarks.forEach(pm => {
+                        let pointNode = pm.getElementsByTagName("Point")[0];
+                        if (pointNode) {
+                            let nameNode = pm.getElementsByTagName("name")[0];
+                            let originalName = nameNode ? nameNode.textContent.trim() : "";
+                            
+                            let isOdp = originalName.toLowerCase().includes("odp");
+                            
+                            if (targetType === "tiang" && isOdp) return; 
+                            if (targetType === "odp" && !isOdp) return;  
+
+                            let ptCoords = pointNode.getElementsByTagName("coordinates")[0].textContent.trim().split(",");
+                            let lon = parseFloat(ptCoords[0]);
+                            let lat = parseFloat(ptCoords[1]);
+                            let p = { lat: lat, lon: lon };
+                            
+                            let closestLineId = -1;
+                            let shortestDistToLine = Infinity;
+                            let distAlongLine = 0;
+
+                            linesData.forEach(line => {
+                                let result = getDistanceAlongLine(p, line.coords, line.cumulative);
+                                let hitungJarak = result.minDist;
+                                if (line.isMain) { hitungJarak -= 0.4; }
+
+                                if (hitungJarak < shortestDistToLine) {
+                                    shortestDistToLine = hitungJarak;
+                                    closestLineId = line.id;
+                                    distAlongLine = result.distAlong;
+                                }
+                            });
+
+                            if (closestLineId !== -1) {
+                                let parentMain = linesData[linesData[closestLineId].parentMainLineId];
+                                let mainRes = getDistanceAlongLine(p, parentMain.coords, parentMain.cumulative);
+
+                                pointsData.push({
+                                    element: pm,
+                                    lineId: closestLineId,
+                                    isMain: linesData[closestLineId].isMain,
+                                    parentMainLineId: linesData[closestLineId].parentMainLineId,
+                                    distAlongLine: distAlongLine,
+                                    mainLineDistance: mainRes.distAlong,
+                                    distToMainLine: mainRes.minDist
+                                });
+                            }
+                        }
+                    });
+
+                    if (pointsData.length === 0) {
+                        status.style.color = "#ef4444"; 
+                        status.innerText = `Gagal: Tidak ditemukan titik tipe [${targetType.toUpperCase()}] di file KML Anda.`;
+                        return;
+                    }
+
+                    pointsData.sort((a, b) => {
+                        if (a.parentMainLineId !== b.parentMainLineId) return a.parentMainLineId - b.parentMainLineId;
+                        if (a.isMain && !b.isMain) return -1;
+                        if (!a.isMain && b.isMain) return 1;
+                        if (a.isMain && b.isMain) return a.mainLineDistance - b.mainLineDistance;
+                        if (!a.isMain && !b.isMain) {
+                            if (a.lineId !== b.lineId) {
+                                return linesData[a.lineId].junctionDistance - linesData[b.lineId].junctionDistance;
+                            }
+                            return a.distAlongLine - b.distAlongLine;
+                        }
+                        return 0;
+                    });
+
+                    let currentNum = startNumber;
+                    let lastParentMainLineId = -1;
+
+                    for (let i = 0; i < pointsData.length; i++) {
+                        let pt = pointsData[i];
+
+                        if (resetPerLine && pt.parentMainLineId !== lastParentMainLineId) {
+                            currentNum = startNumber;
+                            lastParentMainLineId = pt.parentMainLineId;
+                        } else if (!resetPerLine && lastParentMainLineId === -1) {
+                            lastParentMainLineId = pt.parentMainLineId;
+                        }
+
+                        let lineLetter = "";
+                        if (insertLineLetter) {
+                            lineLetter = String.fromCharCode(65 + pt.parentMainLineId); 
+                        }
+
+                        let formattedNum = currentNum.toString().padStart(digitFormat, '0');
+                        let finalName = prefix + lineLetter + formattedNum;
+
+                        let pm = pt.element;
+                        let nameNode = pm.getElementsByTagName("name")[0];
+                        if (nameNode) {
+                            nameNode.textContent = finalName;
+                        } else {
+                            let newNameNode = xmlDoc.createElement("name");
+                            newNameNode.textContent = finalName;
+                            pm.insertBefore(newNameNode, pm.firstChild);
+                        }
+                        currentNum++;
+                    }
+
+                    const serializer = new XMLSerializer();
+                    const updatedKMLString = serializer.serializeToString(xmlDoc);
+                    const blob = new Blob([updatedKMLString], { type: "application/vnd.google-earth.kml+xml" });
+                    const url = URL.createObjectURL(blob);
+
+                    status.style.color = "#10b981"; 
+                    status.innerText = `Sukses! Berhasil memproses ${pointsData.length} titik sebagai [${targetType.toUpperCase()}].`;
+
+                    downloadBtn.href = url;
+                    let originalName = file.name.replace(/\.[^/.]+$/, ""); 
+                    downloadBtn.download = originalName + "_" + targetType + "_Fixed.kml";
+                    downloadBtn.style.display = "block";
+
+                    // TRIGGGER COUNTER KE SERVER PHP (Kirim data POST)
+                    fetch("update_counter.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ fitur: "counter_autonaming" })
+                    }).catch(err => console.error("Gagal mengupdate counter server:", err));
+
+                } catch (error) {
+                    console.error(error);
+                    status.style.color = "#ef4444"; status.innerText = "Terjadi kesalahan sistem.";
+                }
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
